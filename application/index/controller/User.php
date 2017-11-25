@@ -7,30 +7,24 @@ use think\Validate;
 
 class User extends Controller{
 
-	// 登陆
-	public function login(){
-		// userRemeber($uid,$encryptPassword);
+	protected $userData;
+	protected $uid;
+
+	public function __construct(){
+		parent::__construct();
+		$passAction = ['nbnb'];
+		// if(!in_array($this->request->action(),$passAction)){
+		// 	// 需要登录
+		// }
+		$this->$userData =  checkUserLogin();
+		if(!$this->$userData){
+			return makeReturnJson(500,'尚未登录');
+		}
+		$this->$uid = $this->$userData['uid'];
 	}
 
-	// 注册
-	public function register(){
-		// userRemeber($uid,$encryptPassword);
-	}
-
-	// 注销
-	public function logout(){
-		cookie('usertoken',null);
-	}
-
-	// 密码加密
-	public function encryptPassword($password) {
-		$password = md5(sha1($password));
-		$one = $password[0];
-		$two = $password[1];
-		$password = sha1($one.$password.$one);
-		$one = $password[0];
-		$two = $password[1];
-		return $one.$two.$password.$two;
+	public function index(){
+		return 'hello';
 	}
 
 }

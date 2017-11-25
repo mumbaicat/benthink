@@ -30,11 +30,11 @@ function toArray($obj) {
 }
 
 /**
- * 生成返回Json
- * @param  integer $code 提示码
+ * 生成Json信息
+ * @param  integer $code 状态吗
  * @param  string $msg  提示信息
- * @param  array  $data 附加数据
- * @return json
+ * @param  array  $data 附加数组
+ * @return string
  */
 function makeReturnJson($code, $msg, $data = []) {
 	$return = [
@@ -42,80 +42,65 @@ function makeReturnJson($code, $msg, $data = []) {
 		'msg' => $msg,
 		'data' => $data,
 	];
-	return json_encode($return, JSON_UNESCAPED_UNICODE);
+	// return json_encode($return, JSON_UNESCAPED_UNICODE);
+	exit(json_encode($return, JSON_UNESCAPED_UNICODE));
+	// json($return); //使用TP内置的
+	// return null ;
 }
 
 /**
- * 获取当前用户UID
+ * 获取当前登录用户的UID
  * @return integer
  */
-function userUid() {
-	$token = cookie('usertoken');
-	$json = base64_decode($token);
-	$data = json_decode($json,true);
-	$uid = $data['uid'];
-	return $uid;
+function getUserUid() {
+	$userToken = cookie('uertoken');
+	// if(empty($usertoken)){
+	// 	if(empty($_SERVER['HTTP_USERTOKEN'])){
+	// 		return false;
+	// 	}else{
+	// 		$userToken = $_SERVER['HTTP_USERTOKEN'];
+	// 	}
+	// }
+	$token = base64_decode($userToken);
+	$json = json_decode($token);
+	return $json['uid'];
 }
 
 /**
- * 记住用户信息
- * @param  integer $uid      用户UID
- * @param  string $password 加密后的用户密码
- * @return void
+ * 检查用户是否登录
+ * @return Boolean 成功返回用户信息,否则返回false
  */
-function userRemeber($uid, $password) {
-	$data = [
-		'uid' => $uid,
-		'password' => $password,
-	];
-	$json = json_encode($data);
-	$token = base64_encode($json);
-	cookie('usertoken', $token,(24*3600)*7);
-}
-
-/**
- * 检测用户真实性 (__construct用这个就可以了)
- * @return Boolean
- */
-function userCheck() {
-	if (!userCheckLogin()) {
+function checkUserLogin() {
+	$userToken = cookie('usertoken');
+	// if(empty($usertoken)){
+	// 	if(empty($_SERVER['HTTP_USERTOKEN'])){
+	// 		return false;
+	// 	}else{
+	// 		$userToken = $_SERVER['HTTP_USERTOKEN'];
+	// 	}
+	// }
+	$token = base64_decode($userToken);
+	if (empty($token)) {
 		return false;
 	}
-	$token = cookie('usertoken');
-	$json = base64_decode($token);
-	$data = json_decode($json,true);
-
-	$uid = $data['uid']; // 这里要过滤
-	$encryptPassword = $data['password']; // 这里要过滤
-	$userData = db('user')->where(['uid' => $uid])->find();
+	$json = json_decode($token);
+	if (empty($json)) {
+		cookie('usertoken', null);
+		return false;
+	}
+	$uid = $json['uid'];
+	$userData = db('user')->where('uid', $uid)->find();
 	if (!$userData) {
-		cookie('usertoken', null);
 		return false;
+	} else {
+		if ($userData['password'] != $json['password']) {
+			cookie('usertoken', null);
+			return false;
+		} else {
+			return $userData;
+		}
 	}
-	if ($userData['password'] != $encryptPassword) {
-		cookie('usertoken', null);
-		return false;
-	}
-	return true;
-}
 
-/**
- * 检测是否登录
- * @return Boolean
- */
-function userCheckLogin() {
-	// $_SERVER['HTTP_USERTOKEN']
-	$token = cookie('usertoken');
-	if (!$token) {
-		return false;
-	}
-	$json = base64_decode($token);
-	$data = json_decode($json,true);
-	if (empty($data['uid']) or empty($data['password'])) {
-		cookie('usertoken', null);
-		return false;
-	}
-	return true;
 }
 
 /**
