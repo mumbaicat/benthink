@@ -30,22 +30,41 @@ function toArray($obj) {
 }
 
 /**
- * 生成Json信息
+ * 生成Json信息		如果需要停止运行就手动加die();
  * @param  integer $code 状态吗
  * @param  string $msg  提示信息
  * @param  array  $data 附加数组
- * @return string
+ * @return void
  */
-function makeReturnJson($code, $msg, $data = []) {
+function makeReturnJson($code, $msg, $data = [],$sys=false) {
 	$return = [
 		'code' => $code,
 		'msg' => $msg,
 		'data' => $data,
 	];
-	// return json_encode($return, JSON_UNESCAPED_UNICODE);
-	exit(json_encode($return, JSON_UNESCAPED_UNICODE));
-	// json($return); //使用TP内置的
-	// return null ;
+
+	if($sys==false){
+		return json_encode($return, JSON_UNESCAPED_UNICODE);
+	}else{
+		return json($return);
+	}
+}
+
+/**
+ * 生成Layui的智能表格的Json
+ * 先获取$_GET['page'] 和 $_GET['limit'] ,然后进行page分页
+ * @param  array $data  分页后的数组
+ * @param  integer $count 全部数组
+ * @return void
+ */
+function makeLayuiTable($data,$count){
+	$return =[
+		'code'=>0,
+		'msg'=>'获取成功',
+		'count'=>count($count),
+		'data'=>$data,
+	];
+	return json($return);
 }
 
 /**
@@ -53,7 +72,7 @@ function makeReturnJson($code, $msg, $data = []) {
  * @return integer
  */
 function getUserUid() {
-	$userToken = cookie('uertoken');
+	$userToken = cookie('usertoken');
 	// if(empty($usertoken)){
 	// 	if(empty($_SERVER['HTTP_USERTOKEN'])){
 	// 		return false;
@@ -62,7 +81,7 @@ function getUserUid() {
 	// 	}
 	// }
 	$token = base64_decode($userToken);
-	$json = json_decode($token);
+	$json = json_decode($token,true);
 	return $json['uid'];
 }
 
@@ -83,7 +102,7 @@ function checkUserLogin() {
 	if (empty($token)) {
 		return false;
 	}
-	$json = json_decode($token);
+	$json = json_decode($token,true);
 	if (empty($json)) {
 		cookie('usertoken', null);
 		return false;
@@ -104,9 +123,26 @@ function checkUserLogin() {
 }
 
 /**
+ * 记住密码
+ * @param  integer $uid        用户的UID
+ * @param  string $enpassword 加密后的密码
+ * @return string	usertoken
+ */
+function remeberUser($uid,$enpassword){
+	$data = [
+		'uid'=>$uid,
+		'password'=>$enpassword
+	];
+	$json = json_enocde($data);
+	$base = base64_enocde($json);
+	cookie('usertoken',$base,3600*24*7);
+	return $base;
+}
+
+/**
  * 文章内容进行转义
  * @param  string $contents 原内容
- * @return string           
+ * @return string
  */
 function encodeContents($contents){
 	$contents = htmlentities($contents);
@@ -116,7 +152,7 @@ function encodeContents($contents){
 /**
  * 对文章内容进行反转义
  * @param  string $contents 已转义的内容
- * @return string           
+ * @return string
  */
 function decodeContents($contents){
 	$contents = html_entity_decode($contents);
@@ -126,12 +162,12 @@ function decodeContents($contents){
 
 function page($array,$page,$count,$order=0){
 	$countpage = 0;
-	$page=(empty($page))?'1':$page; 
-	$start=($page-1)*$count; 
+	$page=(empty($page))?'1':$page;
+	$start=($page-1)*$count;
 	if($order==1){
 		$array=array_reverse($array);
-	}  
-	$totals=count($array); 
+	}
+	$totals=count($array);
 	$countpage=ceil($totals/$count); #计算总页面数
 	$pagedata=array();
 	$pagedata=array_slice($array,$start,$count);
