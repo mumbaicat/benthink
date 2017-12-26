@@ -36,18 +36,20 @@ function toArray($obj) {
  * @param  array  $data 附加数组
  * @return void
  */
-function makeReturnJson($code, $msg, $data = [],$sys=false) {
-	$return = [
-		'code' => $code,
-		'msg' => $msg,
-		'data' => $data,
-	];
+function makeReturnJson($code, $msg, $data = [], $sys=false)
+{
+    $return = [
+        'code' => $code,
+        'msg' => $msg,
+        'data' => $data,
+    ];
 
-	if($sys==false){
-		return json_encode($return, JSON_UNESCAPED_UNICODE);
-	}else{
-		return json($return);
-	}
+    if ($sys==false) {
+        header('content-type:text/json;charset=utf-8');
+        exit(json_encode($return, JSON_UNESCAPED_UNICODE));
+    } else {
+        return json($return);
+    }
 }
 
 /**
@@ -57,14 +59,16 @@ function makeReturnJson($code, $msg, $data = [],$sys=false) {
  * @param  integer $count 全部数组
  * @return void
  */
-function makeLayuiTable($data,$count){
-	$return =[
-		'code'=>0,
-		'msg'=>'获取成功',
-		'count'=>count($count),
-		'data'=>$data,
-	];
-	return json($return);
+function makeLayuiTable($data, $count)
+{
+    $return =[
+        'code'=>0,
+        'msg'=>'获取成功',
+        'count'=>count($count),
+        'data'=>$data,
+    ];
+    header('content-type:text/json;charset=utf-8');
+    exit(json_encode($return, JSON_UNESCAPED_UNICODE));
 }
 
 /**
@@ -110,6 +114,7 @@ function checkUserLogin() {
 	$uid = $json['uid'];
 	$userData = db('user')->where('uid', $uid)->find();
 	if (!$userData) {
+		cookie('usertoken', null);
 		return false;
 	} else {
 		if ($userData['password'] != $json['password']) {
@@ -160,6 +165,14 @@ function decodeContents($contents){
 }
 
 
+/**
+ * 数组分页
+ * @param  array  $array 原数组
+ * @param  integer  $page  当前页数
+ * @param  integer  $count 每页个数
+ * @param  integer $order 0默认 1倒序
+ * @return array         
+ */
 function page($array,$page,$count,$order=0){
 	$countpage = 0;
 	$page=(empty($page))?'1':$page;
@@ -172,4 +185,108 @@ function page($array,$page,$count,$order=0){
 	$pagedata=array();
 	$pagedata=array_slice($array,$start,$count);
 	return $pagedata;
+}
+
+/**
+ * 秒转人性化时间处理
+ * @param  integer  $time    秒数
+ * @param  integer $seconds 单位
+ * @return string
+ */
+function timespan($time = '', $seconds = 1) {
+	if (!is_numeric($seconds)) {
+		$seconds = 1;
+	}
+	if (!is_numeric($time)) {
+		$time = time();
+	}
+	if ($time <= $seconds) {
+		$seconds = 1;
+	} else {
+		$seconds = $time - $seconds;
+	}
+	$str = '';
+	$years = floor($seconds / 31536000);
+	if ($years > 0) {
+		$str .= $years . ' 年';
+	}
+	$seconds -= $years * 31536000;
+	$months = floor($seconds / 2628000);
+	if ($years > 0 OR $months > 0) {
+		if ($months > 0) {
+			$str .= $months . ' 月';
+		}
+
+		$seconds -= $months * 2628000;
+	}
+	$weeks = floor($seconds / 604800);
+	if ($years > 0 OR $months > 0 OR $weeks > 0) {
+		if ($weeks > 0) {
+			$str .= $weeks . ' 周';
+		}
+
+		$seconds -= $weeks * 604800;
+	}
+	$days = floor($seconds / 86400);
+	if ($months > 0 OR $weeks > 0 OR $days > 0) {
+		if ($days > 0) {
+			$str .= $days . ' 天';
+		}
+
+		$seconds -= $days * 86400;
+	}
+	$hours = floor($seconds / 3600);
+	if ($days > 0 OR $hours > 0) {
+		if ($hours > 0) {
+			$str .= $hours . ' 小时';
+		}
+
+		$seconds -= $hours * 3600;
+	}
+	$minutes = floor($seconds / 60);
+	if ($days > 0 OR $hours > 0 OR $minutes > 0) {
+		if ($minutes > 0) {
+			$str .= $minutes . ' 分钟';
+		}
+
+		$seconds -= $minutes * 60;
+	}
+	if ($str == '') {
+		$str .= $seconds . ' 秒';
+	}
+	return $str;
+}
+
+/**
+ * 人性化时间显示(xx秒钱)
+ * @param  integer $timeInt UNIX时间戳
+ * @param  string $format  返回格式
+ * @return string          
+ */
+function timeFormat($timeInt, $format = 'Y-m-d H:i:s') {
+	if (empty($timeInt) || !is_numeric($timeInt) || !$timeInt) {
+		return '';
+	}
+	$d = time() - $timeInt;
+	if ($d < 0) {
+		return '';
+	} else {
+		if ($d < 60) {
+			return $d . '秒前';
+		} else {
+			if ($d < 3600) {
+				return floor($d / 60) . '分钟前';
+			} else {
+				if ($d < 86400) {
+					return floor($d / 3600) . '小时前';
+				} else {
+					if ($d < 259200) {			//3天内
+						return floor($d / 86400) . '天前';
+					} else {
+						return date($format, $timeInt);
+					}
+				}
+			}
+		}
+	}
 }
