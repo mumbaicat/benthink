@@ -16,7 +16,7 @@
  * @param  object  $obj  结果对象集
  * @return array
  */
-function toArray($obj) {
+function to_array($obj) {
 	$return = [];
 	foreach ($obj as $key) {
 		$temp = json_decode($key);
@@ -36,7 +36,7 @@ function toArray($obj) {
  * @param  array  $data 附加数组
  * @return void
  */
-function makeReturnJson($code, $msg, $data = [], $sys=false)
+function make_return_json($code, $msg, $data = [], $sys=false)
 {
     $return = [
         'code' => $code,
@@ -59,7 +59,7 @@ function makeReturnJson($code, $msg, $data = [], $sys=false)
  * @param  integer $count 全部数组
  * @return void
  */
-function makeLayuiTable($data, $count)
+function make_layui_table($data, $count)
 {
     $return =[
         'code'=>0,
@@ -75,15 +75,16 @@ function makeLayuiTable($data, $count)
  * 获取当前登录用户的UID
  * @return integer
  */
-function getUserUid() {
+function get_user_uid() {
+	// 考虑用base
 	$userToken = cookie('usertoken');
-	// if(empty($usertoken)){
-	// 	if(empty($_SERVER['HTTP_USERTOKEN'])){
-	// 		return false;
-	// 	}else{
-	// 		$userToken = $_SERVER['HTTP_USERTOKEN'];
-	// 	}
-	// }
+	if(empty($usertoken)){
+		if(empty($_SERVER['HTTP_USER_TOKEN'])){
+			return false;
+		}else{
+			$userToken = $_SERVER['HTTP_USER_TOKEN'];
+		}
+	}
 	$token = base64_decode($userToken);
 	$json = json_decode($token,true);
 	return $json['uid'];
@@ -93,15 +94,15 @@ function getUserUid() {
  * 检查用户是否登录
  * @return Boolean 成功返回用户信息,否则返回false
  */
-function checkUserLogin() {
+function check_user_login() {
 	$userToken = cookie('usertoken');
-	// if(empty($usertoken)){
-	// 	if(empty($_SERVER['HTTP_USERTOKEN'])){
-	// 		return false;
-	// 	}else{
-	// 		$userToken = $_SERVER['HTTP_USERTOKEN'];
-	// 	}
-	// }
+	if(empty($usertoken)){
+		if(empty($_SERVER['HTTP_USER_TOKEN'])){
+			return false;
+		}else{
+			$userToken = $_SERVER['HTTP_USER_TOKEN'];
+		}
+	}
 	$token = base64_decode($userToken);
 	if (empty($token)) {
 		return false;
@@ -133,7 +134,7 @@ function checkUserLogin() {
  * @param  string $enpassword 加密后的密码
  * @return string	usertoken
  */
-function remeberUser($uid,$enpassword){
+function remeber_user($uid,$enpassword){
 	$data = [
 		'uid'=>$uid,
 		'password'=>$enpassword
@@ -149,7 +150,7 @@ function remeberUser($uid,$enpassword){
  * @param  string $contents 原内容
  * @return string
  */
-function encodeContents($contents){
+function encode_contents($contents){
 	$contents = htmlentities($contents);
 	return $contents;
 }
@@ -159,7 +160,7 @@ function encodeContents($contents){
  * @param  string $contents 已转义的内容
  * @return string
  */
-function decodeContents($contents){
+function decode_contents($contents){
 	$contents = html_entity_decode($contents);
 	return $contents;
 }
@@ -171,7 +172,7 @@ function decodeContents($contents){
  * @param  integer  $page  当前页数
  * @param  integer  $count 每页个数
  * @param  integer $order 0默认 1倒序
- * @return array         
+ * @return array
  */
 function page($array,$page,$count,$order=0){
 	$countpage = 0;
@@ -193,7 +194,7 @@ function page($array,$page,$count,$order=0){
  * @param  integer $seconds 单位
  * @return string
  */
-function timespan($time = '', $seconds = 1) {
+function time_span($time = '', $seconds = 1) {
 	if (!is_numeric($seconds)) {
 		$seconds = 1;
 	}
@@ -258,12 +259,12 @@ function timespan($time = '', $seconds = 1) {
 }
 
 /**
- * 人性化时间显示(xx秒钱)
+ * 人性化时间显示(xx秒前)
  * @param  integer $timeInt UNIX时间戳
  * @param  string $format  返回格式
- * @return string          
+ * @return string
  */
-function timeFormat($timeInt, $format = 'Y-m-d H:i:s') {
+function time_format($timeInt, $format = 'Y-m-d H:i:s') {
 	if (empty($timeInt) || !is_numeric($timeInt) || !$timeInt) {
 		return '';
 	}

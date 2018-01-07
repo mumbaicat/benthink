@@ -7,7 +7,6 @@
     {include file="public/r_base" /}
 </head>
 <body>
-
 <!--
 顶栏->侧边栏
 <li top-bar top-id="1" class="layui-nav-item layui-this"><a href="javascript:;">控制台</a></li>
@@ -63,7 +62,7 @@
                 <!-- 控制台的 -->
                 <ul left-bar left-id="1" class="layui-nav layui-nav-tree" lay-filter="left-nav" style="border-radius: 0;">
                     <li class="layui-nav-item layui-nav-itemed">
-                        <a href="javascript:;" data-url="<?php echo url('admin/index/welcome');?>" data-id="11" tab-item>
+                        <a href="javascript:;" data-url="{:url('admin/index/welcome')}" data-id="11" tab-item>
                             欢迎
                         </a>
                     </li>
@@ -79,7 +78,7 @@
                         </a>
                         <dl class="layui-nav-child">
                             <dd>
-                                <a href="javascript:;" data-url="<?php echo url('admin/index/form');?>" data-id="2" tab-item>
+                                <a href="javascript:;" data-url="{:url('admin/index/form')}" data-id="2" tab-item>
                                     表单
                                 </a>
                             </dd>
