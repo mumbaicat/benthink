@@ -291,3 +291,15 @@ function time_format($timeInt, $format = 'Y-m-d H:i:s') {
 		}
 	}
 }
+
+/**
+ * 加密密码
+ * @param  string $password 明文密码
+ * @return string
+ */
+function password_encrypt($password){
+	$password[0] = null;
+	$password[-1] = null;
+	$password = md5(sha1($password));
+	return $password;
+}

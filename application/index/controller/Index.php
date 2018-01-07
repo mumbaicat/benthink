@@ -7,4 +7,8 @@ class Index
     {
         return 'hello&nbsp;benthink!';
     }
+
+    public function test(){
+        return json_encode(input('post.'));
+    }
 }
