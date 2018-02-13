@@ -36,20 +36,19 @@ function to_array($obj) {
  * @param  array  $data 附加数组
  * @return void
  */
-function make_return_json($code, $msg, $data = [], $sys=false)
-{
-    $return = [
-        'code' => $code,
-        'msg' => $msg,
-        'data' => $data,
-    ];
+function make_return_json($code, $msg, $data = [], $sys = false) {
+	$return = [
+		'code' => $code,
+		'msg' => $msg,
+		'data' => $data,
+	];
 
-    if ($sys==false) {
-        header('content-type:text/json;charset=utf-8');
-        exit(json_encode($return, JSON_UNESCAPED_UNICODE));
-    } else {
-        return json($return);
-    }
+	if ($sys == false) {
+		header('content-type:text/json;charset=utf-8');
+		exit(json_encode($return, JSON_UNESCAPED_UNICODE));
+	} else {
+		return json($return);
+	}
 }
 
 /**
@@ -59,16 +58,15 @@ function make_return_json($code, $msg, $data = [], $sys=false)
  * @param  integer $count 全部数组
  * @return void
  */
-function make_layui_table($data, $count)
-{
-    $return =[
-        'code'=>0,
-        'msg'=>'获取成功',
-        'count'=>count($count),
-        'data'=>$data,
-    ];
-    header('content-type:text/json;charset=utf-8');
-    exit(json_encode($return, JSON_UNESCAPED_UNICODE));
+function make_layui_table($data, $count) {
+	$return = [
+		'code' => 0,
+		'msg' => '获取成功',
+		'count' => count($count),
+		'data' => $data,
+	];
+	header('content-type:text/json;charset=utf-8');
+	exit(json_encode($return, JSON_UNESCAPED_UNICODE));
 }
 
 /**
@@ -78,15 +76,15 @@ function make_layui_table($data, $count)
 function get_user_uid() {
 	// 考虑用base
 	$userToken = cookie('usertoken');
-	if(empty($usertoken)){
-		if(empty($_SERVER['HTTP_USER_TOKEN'])){
+	if (empty($userToken)) {
+		if (empty($_SERVER['HTTP_USER_TOKEN'])) {
 			return false;
-		}else{
+		} else {
 			$userToken = $_SERVER['HTTP_USER_TOKEN'];
 		}
 	}
 	$token = base64_decode($userToken);
-	$json = json_decode($token,true);
+	$json = json_decode($token, true);
 	return $json['uid'];
 }
 
@@ -96,10 +94,10 @@ function get_user_uid() {
  */
 function check_user_login() {
 	$userToken = cookie('usertoken');
-	if(empty($usertoken)){
-		if(empty($_SERVER['HTTP_USER_TOKEN'])){
+	if (empty($userToken)) {
+		if (empty($_SERVER['HTTP_USER_TOKEN'])) {
 			return false;
-		}else{
+		} else {
 			$userToken = $_SERVER['HTTP_USER_TOKEN'];
 		}
 	}
@@ -107,7 +105,7 @@ function check_user_login() {
 	if (empty($token)) {
 		return false;
 	}
-	$json = json_decode($token,true);
+	$json = json_decode($token, true);
 	if (empty($json)) {
 		cookie('usertoken', null);
 		return false;
@@ -134,14 +132,14 @@ function check_user_login() {
  * @param  string $enpassword 加密后的密码
  * @return string	usertoken
  */
-function remeber_user($uid,$enpassword){
+function remeber_user($uid, $enpassword) {
 	$data = [
-		'uid'=>$uid,
-		'password'=>$enpassword
+		'uid' => $uid,
+		'password' => $enpassword,
 	];
-	$json = json_enocde($data);
-	$base = base64_enocde($json);
-	cookie('usertoken',$base,3600*24*7);
+	$json = json_encode($data);
+	$base = base64_encode($json);
+	cookie('usertoken', $base, 3600 * 24 * 7);
 	return $base;
 }
 
@@ -150,7 +148,7 @@ function remeber_user($uid,$enpassword){
  * @param  string $contents 原内容
  * @return string
  */
-function encode_contents($contents){
+function encode_contents($contents) {
 	$contents = htmlentities($contents);
 	return $contents;
 }
@@ -160,11 +158,10 @@ function encode_contents($contents){
  * @param  string $contents 已转义的内容
  * @return string
  */
-function decode_contents($contents){
+function decode_contents($contents) {
 	$contents = html_entity_decode($contents);
 	return $contents;
 }
-
 
 /**
  * 数组分页
@@ -174,17 +171,17 @@ function decode_contents($contents){
  * @param  integer $order 0默认 1倒序
  * @return array
  */
-function page($array,$page,$count,$order=0){
+function page($array, $page, $count, $order = 0) {
 	$countpage = 0;
-	$page=(empty($page))?'1':$page;
-	$start=($page-1)*$count;
-	if($order==1){
-		$array=array_reverse($array);
+	$page = (empty($page)) ? '1' : $page;
+	$start = ($page - 1) * $count;
+	if ($order == 1) {
+		$array = array_reverse($array);
 	}
-	$totals=count($array);
-	$countpage=ceil($totals/$count); #计算总页面数
-	$pagedata=array();
-	$pagedata=array_slice($array,$start,$count);
+	$totals = count($array);
+	$countpage = ceil($totals / $count); #计算总页面数
+	$pagedata = array();
+	$pagedata = array_slice($array, $start, $count);
 	return $pagedata;
 }
 
@@ -281,7 +278,8 @@ function time_format($timeInt, $format = 'Y-m-d H:i:s') {
 				if ($d < 86400) {
 					return floor($d / 3600) . '小时前';
 				} else {
-					if ($d < 259200) {			//3天内
+					if ($d < 259200) {
+						//3天内
 						return floor($d / 86400) . '天前';
 					} else {
 						return date($format, $timeInt);
@@ -297,7 +295,7 @@ function time_format($timeInt, $format = 'Y-m-d H:i:s') {
  * @param  string $password 明文密码
  * @return string
  */
-function password_encrypt($password){
+function password_encrypt($password) {
 	$password[0] = null;
 	$password[-1] = null;
 	$password = md5(sha1($password));

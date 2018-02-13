@@ -5,19 +5,20 @@ use think\Controller;
 
 class Base extends Controller{
 
+
     public function __construct($passAction=[]){
         parent::__construct();
-        $userData = checkUserLogin();
-        if(!$passAction){
+        $userData = check_user_login();
+        if(count($passAction)!=0){
             // 白名单验证
             if(!in_array($this->request->action(),$passAction)){
                 if(!$userData){
-                    return makeReturnJson(500,'尚未登录');
+                    return make_return_json(500,'尚未登录1');
                 }
             }
         }else{
-            if(!$this->$userData){
-                return makeReturnJson(500,'尚未登录');
+            if(!$userData){
+                return make_return_json(500,'尚未登录2');
             }
         }
 
