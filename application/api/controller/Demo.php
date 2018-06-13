@@ -167,13 +167,24 @@ class Demo extends Base{
     public function output(){
         $paramData = input('param.');
 
+        $rule = [
+            'start_time|开始日期' => 'date',
+            'end_time|结束日期' => 'date',
+        ];
+        $validate = new Validate($rule);
+        if(!$validate->check($paramData)){
+            return make_return_json(500,$validate->getError());
+        }
+
         $col = [];
         foreach($paramData as $key => $value){
-            $new = [
-                'left' => $key,
-                'right' => $value
-            ];
-            $col[] = $new;
+            if($key!='start_time' and $key!='end_time'){
+                $new = [
+                    'left' => $key,
+                    'right' => $value
+                ];
+                $col[] = $new;
+            }
         }
 
         if(empty($col)){
@@ -186,22 +197,37 @@ class Demo extends Base{
         }
         $fields = substr($fields,0,-1);
 
-        // 改这里
-        // $data = Db::name('user')->field($fields)->limit(10)->select();
-        $data = Db::name('order_bu')->field($fields)->select();
+        ini_set("memory_limit","-1");
+        if(empty($paramData['start_time']) !=true and empty($paramData['end_time'])!=true ){
+            $data = Db::name('order')->field($fields)->whereTime('create_time','between',[$paramData['start_time'],$paramData['end_time']])->select();
+        }else{
+            $data = Db::name('order')->field($fields)->select();
+        }
 
+        for ($i=0; $i < count($data); $i++) {
+            if(!empty($data[$i]['create_time'])){
+                $data[$i]['create_time'] = date('Y-m-d H:i:s',$data[$i]['create_time']);
+            }
+
+            // 空的
+            foreach ($col as $value) {
+                if(empty($data[$i][$value['left']])){
+                    $data[$i][$value['left']] = '--';
+                }
+            }
+        }
         import('Excel.PHPExcel', EXTEND_PATH);
 
 
         $objPHPExcel = new \PHPExcel();
         /*以下是一些设置 ，什么作者  标题啊之类的*/
         $objPHPExcel->getProperties()->setCreator("freeloop工作室")
-        	->setLastModifiedBy("freeloop工作室")
-        	->setTitle("数据EXCEL导出")
-        	->setSubject("数据EXCEL导出")
-        	->setDescription("备份数据")
-        	->setKeywords("excel")
-        	->setCategory("result file");
+            ->setLastModifiedBy("freeloop工作室")
+            ->setTitle("数据EXCEL导出")
+            ->setSubject("数据EXCEL导出")
+            ->setDescription("备份数据")
+            ->setKeywords("excel")
+            ->setCategory("result file");
 
         /*表头*/
 
@@ -216,11 +242,15 @@ class Demo extends Base{
 
 
         foreach ($data as $k => $v) {
-        	$num = $num + 1;
-        	// $objPHPExcel->setActiveSheetIndex(0);
+            $num = $num + 1;
+            // $objPHPExcel->setActiveSheetIndex(0);
             $fuckFun .= '$objPHPExcel->setActiveSheetIndex(0)';
             for($i=1;$i<=count($col);$i++){
-                $fuckFun .= '->setCellValue(\''.number_to_letter($i) . $num.'\', \''.$v[$col[$i-1]['left']].'\')';
+                if(is_numeric($v[$col[$i-1]['left']])){
+                    $string = ',\PHPExcel_Cell_DataType::TYPE_STRING';
+                }
+                // setCellValue() 普通的,setCellValueExplicit带格式的.
+                $fuckFun .= '->setCellValueExplicit(\''.number_to_letter($i) . $num.'\', \''.$v[$col[$i-1]['left']].'\''.$string.')';
             }
             $fuckFun .=';';
         }
@@ -232,8 +262,158 @@ class Demo extends Base{
         $objPHPExcel = $fuck($objPHPExcel);
 
         header('Content-Type: application/vnd.ms-excel');
-        $now = date('m_d_Hi', time());
-        header('Content-Disposition: attachment;filename=' . $now . '.xls');
+        $now = date('m_d_H_i_s', time());
+        header('Content-Disposition: attachment;filename=order_' . $now . '.xls');
+        header('Cache-Control: max-age=0');
+        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+        $objWriter->save('php://output');
+        exit;
+    }
+
+    /**
+     * 导出数据到excel
+     * api post api.php/api/{controller}/{method}
+     * @param string $start_time 可选,开始日期
+     * @param string $end_time 可选,结束日期
+     * @param array $output 可选,导出列, wangwang|旺旺
+     * @param mixed $xxx.. 可选,搜索关键词,可以多个
+     * @param mixed $xxx.. 可选,搜索关键词,可以多个
+     */
+    public function search_output(){
+        $paramData = input('param.');
+
+        $rule = [
+            'start_time|开始日期' => 'date',
+            'end_time|结束日期' => 'date',
+            'output|导出' => 'require|array'
+        ];
+        $validate = new Validate($rule);
+        if(!$validate->check($paramData)){
+            return make_return_json(500,$validate->getError());
+        }
+
+
+
+        $col = [];
+        foreach($paramData as $key => $value){
+            if($key!='start_time' and $key!='end_time' and $key!='output' and empty($value)!=true){
+                $new = [
+                    'left' => $key,
+                    'right' => $value
+                ];
+                $col[] = $new;
+            }
+        }
+        if(count($col)!=0){
+            // 生成sql
+            $stratTime = strtotime('00:00');
+            $endTIme = strtotime('24:00');
+            $sql = "select * from f_order_bu ";
+            if(count($col)!=0){
+                $sql.='where ';
+            }
+            for ($i=0; $i < count($col); $i++) {
+                $sql .= "({$col[$i]['left']} like '%{$col[$i]['right']}%') or";
+            }
+            $sql = substr($sql,0,-2);
+            $sql .= " order by create_time asc;";
+            $data = Db::query($sql);
+        }else{
+            // 默认搜索
+            $data = Db::name('order_bu')->order('create_time','asc')->select();
+        }
+
+        // 导出表格要的列
+        $excel_field = [];
+        foreach ($paramData['output'] as $key) {
+            if(preg_match_all('/([a-z]*)\|(.*)/',$key,$match)){
+                $new = [
+                    'left' => $match[1][0],
+                    'right' => $match[2][0]
+                ];
+                $excel_field[] = $new;
+            }
+        }
+
+
+        if(empty($excel_field)){
+            return make_return_json(500,'空参数');
+        }
+
+        ini_set("memory_limit","-1");
+
+        for ($i=0; $i < count($data); $i++) {
+            if(!empty($data[$i]['uid'])){
+                $data[$i]['uid'] = get_user_name($data[$i]['uid']);
+            }
+            if(!empty($data[$i]['status']) or $data[$i]['status']==0){
+                $data[$i]['status'] = get_order_bu_status($data[$i]['status']);
+            }
+            if(!empty($data[$i]['customer'])){
+                $data[$i]['customer'] = get_customer_status($data[$i]['customer']);
+            }
+            if(!empty($data[$i]['create_time'])){
+                $data[$i]['create_time'] = date('Y-m-d H:i:s',$data[$i]['create_time']);
+            }
+
+            // 可空的
+            foreach ($excel_field as $value) {
+                if(empty($data[$i][$value['left']])){
+                    $data[$i][$value['left']] = '--';
+                }
+            }
+        }
+
+        import('Excel.PHPExcel', EXTEND_PATH);
+
+
+        $objPHPExcel = new \PHPExcel();
+        /*以下是一些设置 ，什么作者  标题啊之类的*/
+        $objPHPExcel->getProperties()->setCreator("freeloop工作室")
+            ->setLastModifiedBy("freeloop工作室")
+            ->setTitle("数据EXCEL导出")
+            ->setSubject("数据EXCEL导出")
+            ->setDescription("备份数据")
+            ->setKeywords("excel")
+            ->setCategory("result file");
+
+        /*表头*/
+
+        /*以下就是对处理Excel里的数据， 横着取数据，主要是这一步，其他基本都不要改*/
+        $num = 1;
+
+        $fuckFun = '$objPHPExcel->setActiveSheetIndex(0)';
+        for($i=1;$i<=count($excel_field);$i++){
+            $fuckFun .= '->setCellValue(\''.number_to_letter($i) . $num.'\', \''.$excel_field[$i-1]['right'].'\')';
+        }
+        $fuckFun .=';';
+
+
+        foreach ($data as $k => $v) {
+            $num = $num + 1;
+            // $objPHPExcel->setActiveSheetIndex(0);
+            $fuckFun .= '$objPHPExcel->setActiveSheetIndex(0)';
+            for($i=1;$i<=count($excel_field);$i++){
+                if(is_numeric($v[$excel_field[$i-1]['left']])){
+                    $string = ',\PHPExcel_Cell_DataType::TYPE_STRING';
+                }else{
+                    $string ='';
+                }
+                // setCellValue() 普通的,setCellValueExplicit带格式的.
+                $fuckFun .= '->setCellValueExplicit(\''.number_to_letter($i) . $num.'\', \''.$v[$excel_field[$i-1]['left']].'\''.$string.')';
+            }
+            $fuckFun .=';';
+        }
+
+        $fuckFun .= '$objPHPExcel->getActiveSheet()->setTitle(\'User\');';
+        $fuckFun .= '$objPHPExcel->setActiveSheetIndex(0);';
+        $fuckFun .= 'return $objPHPExcel;';
+        $fuck = create_function('$objPHPExcel',$fuckFun);
+        $objPHPExcel = $fuck($objPHPExcel);
+
+        header('Content-Type: application/vnd.ms-excel');
+        $now = date('m_d_H_i_s', time());
+        header('Content-Disposition: attachment;filename=order_bu_' . $now . '.xls');
         header('Cache-Control: max-age=0');
         $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
         $objWriter->save('php://output');

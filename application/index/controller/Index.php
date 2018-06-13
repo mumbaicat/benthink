@@ -1,14 +1,10 @@
 <?php
 namespace app\index\controller;
 
-use mumbaicat\apidoc\ApiDoc;
-
 class Index
 {
     public function index()
     {
-        $doc = new ApiDoc('../application');
-        $doc->make();
         return 'hello&nbsp;benthink!';
     }
 
